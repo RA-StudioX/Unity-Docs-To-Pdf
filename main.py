@@ -37,11 +37,8 @@ def main():
             print("Error: Failed to parse the TOC structure. No valid nodes found.")
             sys.exit(1)
 
-        # Update page numbers
-        update_page_numbers(toc_nodes)
-        
         # Generate PDF
-        output_pdf = "table_of_contents.pdf"
+        output_pdf = "test.pdf"
         create_toc_pdf(toc_nodes, output_pdf)
         print(f"PDF generated successfully: {output_pdf}")
 

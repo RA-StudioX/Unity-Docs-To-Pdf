@@ -1,6 +1,7 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 
@@ -15,49 +16,43 @@ def create_toc_pdf(toc_nodes, output_file):
                               alignment=1,  # Center alignment
                               spaceAfter=0.5*inch))
 
-    # Create a custom style for TOC entries
-    styles.add(ParagraphStyle(name='TOC',
-                              fontName='Helvetica',
-                              fontSize=12,
-                              alignment=1,  # Center alignment
-                              spaceAfter=6))
+    # Function to get TOC style, creating it if it doesn't exist
+    def get_toc_style(level):
+        style_name = f'TOC{level}'
+        if style_name not in styles:
+            styles.add(ParagraphStyle(name=style_name,
+                                      fontSize=max(16 - level*2, 8),  # Minimum font size of 8
+                                      leftIndent=20*level))
+        return styles[style_name]
 
-    def create_toc_content(node, level=0):
-        content = []
-        indent = '    ' * level
-        link = node.link if node.link else ''
-        
-        toc_entry = f"{indent}<a href='{link}'>{node.title}</a>"
-        page_num = str(node.page_number)
-        
-        # Create a table for each entry to allow for centered text and right-aligned page number
-        toc_table = Table([[toc_entry, page_num]], colWidths=[6.5*inch, 0.5*inch])
-        toc_table.setStyle(TableStyle([
-            ('ALIGN', (0,0), (0,0), 'CENTER'),
-            ('ALIGN', (1,0), (1,0), 'RIGHT'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
-            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-            ('FONTSIZE', (0,0), (-1,-1), 12),
-        ]))
-        
-        content.append(toc_table)
-        
-        for child in node.children:
-            content.extend(create_toc_content(child, level + 1))
-        
-        return content
+    def create_toc_content(nodes, story, level=1):
+        for node in nodes:
+            # Add the entry to the story
+            story.append(Paragraph(node.title, get_toc_style(level)))
+            # Add the entry to the TOC
+            toc.addEntry(level, node.title, story.__len__())
+            
+            if node.children:
+                create_toc_content(node.children, story, level+1)
 
     # Create the content
-    content = [
+    story = [
         Paragraph("Unity Documentation", styles['MainTitle']),
         Spacer(1, 0.25 * inch),
         Paragraph("Table of Contents", styles['Title']),
         Spacer(1, 0.25 * inch)
     ]
-    
-    for node in toc_nodes:
-        content.extend(create_toc_content(node))
+
+    # Create Table of Contents object
+    toc = TableOfContents()
+    toc.levelStyles = [get_toc_style(i) for i in range(1, 10)]  # Support up to 9 levels
+    story.append(toc)
+
+    # Add a page break after TOC
+    story.append(Spacer(1, 1*inch))
+
+    # Create the actual content (this will be used to generate TOC)
+    create_toc_content(toc_nodes, story)
 
     # Build the PDF
-    doc.build(content)
+    doc.multiBuild(story)
