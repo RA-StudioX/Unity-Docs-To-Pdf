@@ -2,7 +2,8 @@ import pdfkit
 import os
 from PyPDF2 import PdfMerger
 import tempfile
-from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, TOC_OPTIONS, OUTPUT_PDF
+from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, OUTPUT_PDF
+from html_preprocessor import preprocess_html
 
 pdfkit_config = pdfkit.configuration(wkhtmltopdf=PATH_TO_WKHTMLTOPDF)
 
@@ -27,8 +28,16 @@ def convert_pdfs(file_limit=None):
             os.chdir(os.path.dirname(html_path))
             
             try:
-                # Pass the options to pdfkit.from_file
-                pdfkit.from_file(html_file, pdf_file, configuration=pdfkit_config, options=PDF_OPTIONS)
+                # Read the HTML content
+                with open(html_path, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                
+                # Preprocess the HTML content
+                base_path = os.path.dirname(html_path)
+                preprocessed_html = preprocess_html(html_content, base_path)
+                
+                # Pass the preprocessed HTML directly to pdfkit
+                pdfkit.from_string(preprocessed_html, pdf_file, configuration=pdfkit_config, options=PDF_OPTIONS)
                 pdf_files.append(pdf_file)
 
                 # Notify after each PDF is created
@@ -39,7 +48,7 @@ def convert_pdfs(file_limit=None):
                 # Change back to the original working directory
                 os.chdir(original_cwd)
 
-        print("\nAll individual PDFs created. Generating Table of Contents and merging...")
+        print("\nAll individual PDFs created. merging...")
 
         # Step 2: Generate ToC and merge PDFs
         merger = PdfMerger()
