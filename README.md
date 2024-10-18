@@ -13,7 +13,9 @@ This project provides a command-line tool to convert Unity Documentation from HT
 - Convert specific Unity Documentation topics to PDF
 - Convert all Unity Documentation topics to a single PDF
 - Limit the depth of conversion for hierarchical topics
-- List all available topics for conversion
+- List all available topics and subtopics for conversion
+- Navigate through the topic hierarchy
+- Print full topic tree
 - Customizable output file name
 
 ## Prerequisites
@@ -32,7 +34,7 @@ Before you begin, ensure you have met the following requirements:
 
    ```
    git clone https://github.com/RA-StudioX/Unity-Docs-To-Pdf.git
-   cd unity-docs-pdf-converter
+   cd Unity-Docs-To-Pdf
    ```
 
 2. Install the required Python packages:
@@ -53,44 +55,56 @@ Before you begin, ensure you have met the following requirements:
 
 The main script is `main.py`. Here are some example usages:
 
-1. More Details
+1. Show help and available options:
 
    ```
    python main.py -h
    ```
 
-1. List all available topics:
+2. List all available topics:
 
    ```
    python main.py --list-topics
    ```
 
-1. Convert a specific topic to PDF:
+3. Convert a specific topic to PDF:
 
    ```
-   python main.py --topic-index 0 --depth 2 --output unity_basics.pdf
+   python main.py --topic-path 0/1/2 --depth 2 --output unity_specific_topic.pdf
    ```
 
-1. Convert all topics to a single PDF:
+4. Convert all topics to a single PDF:
+
    ```
    python main.py --output full_unity_docs.pdf
    ```
 
+5. Print the full topic tree:
+
+   ```
+   python main.py --full-tree
+   ```
+
 ### Command-line Arguments
 
-- `--topic-index`: Index of the topic to convert. If not provided, all topics will be converted.
 - `--depth`: Limit the depth of the topic hierarchy to process. If not specified, all levels will be processed.
+- `--topic-path`: Path to the topic to convert. Use slash-separated integers to specify the path to the desired topic/subtopic. Example: '0/1/2'
 - `--output`: Output PDF file name. Default is 'output.pdf'.
-- `--list-topics`: List all available topics and their indices, then exit.
+- `--list-topics`: List topics and subtopics. Use slash-separated integers to specify the path to the desired topic/subtopic, or 'all' to list main topics.
+- `--full-tree`: Print the full topic tree with all subtopics and their indices.
 
 ## Project Structure
 
 - `main.py`: The main script to run the conversion process.
 - `cli_parser.py`: Handles command-line argument parsing and validation.
 - `pdf_converter.py`: Contains the core logic for converting HTML to PDF.
-- `topic_utils.py`: Utility functions for handling topics.
+- `topic_utils.py`: Utility functions for handling topics and navigation.
 - `html_preprocessor.py`: Preprocesses HTML content before conversion.
 - `config.py`: Configuration settings for the project.
+- `TOC/`: Directory containing modules for handling the table of contents
+  - `__init__.py`: Initialization file for the TOC package
+  - `parse_json_toc.py`: Functions for parsing the JSON table of contents
+  - `toc_node.py`: Defines the TOCNode class for representing the topic hierarchy
 
 ## Contributing
 
@@ -98,7 +112,7 @@ Contributions to this project are welcome. Please fork the repository and submit
 
 ## License
 
-This package is licensed under the MIT License. See the [LICENSE](https://github.com/RA-StudioX/Unity-Docs-To-Pdf/blob/main/LICENSE.md) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/RA-StudioX/Unity-Docs-To-Pdf/blob/main/LICENSE.md) file for details.
 
 ## Author
 
