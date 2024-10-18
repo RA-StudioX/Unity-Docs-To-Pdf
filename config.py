@@ -6,6 +6,7 @@ PATH_TO_WKHTMLTOPDF = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
 # Define base directories
 BASE_DIR = r'd:\UnityDocumentation\Documentation\en'
 HTML_DIR = os.path.join(BASE_DIR, 'Manual')
+TOC_DIR = os.path.join(HTML_DIR, r'docdata\toc.json')
 
 # Define options to include images and CSS
 PDF_OPTIONS = {
@@ -21,5 +22,3 @@ PDF_OPTIONS = {
 TOC_OPTIONS = {
     'xsl-style-sheet': 'toc.xsl'
 }
-
-OUTPUT_PDF = 'documentation.pdf'
