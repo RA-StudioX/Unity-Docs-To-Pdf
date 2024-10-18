@@ -2,53 +2,48 @@ import pdfkit
 import os
 from PyPDF2 import PdfMerger
 import tempfile
-from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, OUTPUT_PDF
+from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, OUTPUT_PDF, TOC_DIR
 from html_preprocessor import preprocess_html
+from TOC import parse_json_toc, TOCNode
 
 pdfkit_config = pdfkit.configuration(wkhtmltopdf=PATH_TO_WKHTMLTOPDF)
 
-def convert_pdfs(file_limit=None):
+def convert_pdfs_recursive(node, temp_dir, current_depth=0, max_depth=2):
+    if not node.children or (max_depth is not None and current_depth >= max_depth):
+        return []
+
+    for child in node.children:
+        convert_pdfs_recursive(child, temp_dir, current_depth + 1, max_depth)
+
+    # Create a PDF for the current node
+    pdf_file = os.path.join(temp_dir, f"{node.title}.pdf")
+    html_path = os.path.join(HTML_DIR, f"{node.link}.html")
+    
+    try:
+        # Read the HTML content
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # Preprocess the HTML content
+        base_path = os.path.dirname(html_path)
+        preprocessed_html = preprocess_html(html_content, base_path)
+        
+        # Pass the preprocessed HTML directly to pdfkit
+        pdfkit.from_string(preprocessed_html, pdf_file, configuration=pdfkit_config, options=PDF_OPTIONS)
+        node.add_pdf_file(pdf_file)
+        print(f"Converted {node.title} to PDF")
+    except Exception as e:
+        print(f"Error converting {node.title}: {str(e)}")
+
+def convert_pdfs(depth_limit=None):
+    root_node_list = parse_json_toc(TOC_DIR).children
     # Create a temporary directory to store individual PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Step 1: Convert each HTML file to a PDF
-        html_files = [f for f in os.listdir(HTML_DIR) if f.endswith('.html')]
-        
-        if file_limit:
-            html_files = html_files[:file_limit]
-        
-        pdf_files = []
-        total_files = len(html_files)
 
-        for index, html_file in enumerate(html_files, start=1):
-            pdf_file = os.path.join(temp_dir, html_file.replace('.html', '.pdf'))
-            html_path = os.path.join(HTML_DIR, html_file)
-            
-            # Change the current working directory to the HTML file's directory
-            original_cwd = os.getcwd()
-            os.chdir(os.path.dirname(html_path))
-            
-            try:
-                # Read the HTML content
-                with open(html_path, 'r', encoding='utf-8') as f:
-                    html_content = f.read()
-                
-                # Preprocess the HTML content
-                base_path = os.path.dirname(html_path)
-                preprocessed_html = preprocess_html(html_content, base_path)
-                
-                # Pass the preprocessed HTML directly to pdfkit
-                pdfkit.from_string(preprocessed_html, pdf_file, configuration=pdfkit_config, options=PDF_OPTIONS)
-                pdf_files.append(pdf_file)
+        for node in root_node_list:
+            convert_pdfs_recursive(node, temp_dir, max_depth=depth_limit)
 
-                # Notify after each PDF is created
-                print(f"Converted {index}/{total_files}: {html_file} to PDF")
-            except Exception as e:
-                print(f"Error converting {html_file}: {str(e)}")
-            finally:
-                # Change back to the original working directory
-                os.chdir(original_cwd)
-
-        print("\nAll individual PDFs created. merging...")
+        print("\nAll individual PDFs created. Merging...")
 
         # Step 2: Generate ToC and merge PDFs
         merger = PdfMerger()
@@ -58,10 +53,23 @@ def convert_pdfs(file_limit=None):
             merger.append('cover.pdf')
 
         # Add content pages
-        for pdf_file in pdf_files:
-            merger.append(pdf_file)
+        for node in root_node_list:
+            add_content_recursive(node, merger, max_depth=depth_limit)
 
         merger.write(OUTPUT_PDF)
         merger.close()
 
     print(f"\nPDF conversion, ToC generation, and merge complete. Output file: {OUTPUT_PDF}")
+
+def add_content_recursive(node, merger, current_depth=0, max_depth=2):
+    if not node.children or (max_depth is not None and current_depth >= max_depth):
+        return
+
+    if node.pdf_file and os.path.exists(node.pdf_file):
+        merger.append(node.pdf_file)
+        print(f"Appending {node.title} to merger")
+    else:
+        print(f"Warning: PDF file not found or not set for {node.title}")
+
+    for child in node.children:
+        add_content_recursive(child, merger, current_depth + 1, max_depth)
