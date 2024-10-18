@@ -1,5 +1,6 @@
 from pdf_converter import convert_pdfs, get_topic_info
 from cli_parser import get_cli_args
+from topic_utils import print_subtopic_info
 
 def main():
     args = get_cli_args()
@@ -7,16 +8,17 @@ def main():
         return
 
     topic_indices = args['topic_indices']
-    subtopic_indices = args['subtopic_indices']
     depth_limit = args['depth']
     output_pdf = args['output']
 
-    if len(topic_indices) == 1:
+    if topic_indices:
         topic_info = get_topic_info()
         selected_topic = topic_info[topic_indices[0]][1]
-        print(f"\nConverting topic: {selected_topic}")
-        if subtopic_indices:
-            print(f"Starting from subtopic indices: {subtopic_indices}")
+        print(f"\nSelected topic: {selected_topic}")
+        if len(topic_indices) > 1:
+            print(f"Selected subtopic indices: {topic_indices[1:]}")
+        print("Full path:")
+        print_subtopic_info(topic_indices)
     else:
         print("\nConverting all topics")
 
@@ -26,15 +28,7 @@ def main():
         print("Processing all levels (no depth limit specified)")
     print(f"Output will be saved as: {output_pdf}")
 
-    for index in topic_indices:
-        if len(topic_indices) > 1:
-            topic_info = get_topic_info()
-            current_topic = topic_info[index][1]
-            print(f"\nConverting topic {index}: {current_topic}")
-        convert_pdfs(depth_limit=depth_limit, topic_index=index, subtopic_indices=subtopic_indices, output_pdf=output_pdf)
-
-    if len(topic_indices) > 1:
-        print(f"\nAll topics have been converted and saved to {output_pdf}")
+    convert_pdfs(depth_limit=depth_limit, topic_indices=topic_indices, output_pdf=output_pdf)
 
 if __name__ == "__main__":
     main()

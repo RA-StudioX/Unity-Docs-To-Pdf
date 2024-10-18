@@ -43,30 +43,30 @@ def convert_pdfs_recursive(node, temp_dir, current_depth=0, max_depth=None):
     for child in node.children:
         convert_pdfs_recursive(child, temp_dir, current_depth + 1, max_depth)
 
-def find_subtopic_node(root_node, topic_index, subtopic_indices):
-    if not subtopic_indices:
-        return root_node.children[topic_index] if 0 <= topic_index < len(root_node.children) else None
-    
-    current_node = root_node.children[topic_index]
-    for index in subtopic_indices:
+def find_topic_node(root_node, topic_indices):
+    if not topic_indices:
+        return None
+
+    current_node = root_node
+    for index in topic_indices:
         if 0 <= index < len(current_node.children):
             current_node = current_node.children[index]
         else:
             return None
     return current_node
 
-def convert_pdfs(output_pdf, depth_limit=None, topic_index=None, subtopic_indices=None):
+def convert_pdfs(output_pdf, depth_limit=None, topic_indices=None):
     root_node = parse_json_toc(TOC_DIR)
     
     # Create a temporary directory to store individual PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
-        if topic_index is not None:
-            selected_node = find_subtopic_node(root_node, topic_index, subtopic_indices)
+        if topic_indices:
+            selected_node = find_topic_node(root_node, topic_indices)
             if selected_node:
-                print(f"\nConverting from subtopic: {selected_node.title}")
+                print(f"\nConverting from topic: {selected_node.title}")
                 convert_pdfs_recursive(selected_node, temp_dir, max_depth=depth_limit)
             else:
-                print(f"Error: Invalid topic or subtopic index.")
+                print(f"Error: Invalid topic indices.")
                 return
         else:
             print("\nConverting all topics")
@@ -83,8 +83,8 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_index=None, subtopic_indice
             merger.append('cover.pdf')
 
         # Add content pages
-        if topic_index is not None:
-            selected_node = find_subtopic_node(root_node, topic_index, subtopic_indices)
+        if topic_indices:
+            selected_node = find_topic_node(root_node, topic_indices)
             if selected_node:
                 add_content_recursive(selected_node, merger, max_depth=depth_limit)
         else:
