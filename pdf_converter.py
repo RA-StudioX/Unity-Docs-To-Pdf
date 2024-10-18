@@ -5,6 +5,7 @@ import tempfile
 from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, TOC_DIR
 from html_preprocessor import preprocess_html
 from TOC import parse_json_toc, TOCNode
+from PyPDF2.generic import Destination, Fit
 
 pdfkit_config = pdfkit.configuration(wkhtmltopdf=PATH_TO_WKHTMLTOPDF)
 
@@ -96,15 +97,31 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_indices=None):
 
     print(f"\nPDF conversion, ToC generation, and merge complete. Output file: {output_pdf}")
 
-def add_content_recursive(node, merger, current_depth=0, max_depth=None):
+
+
+def add_content_recursive(node, merger, current_depth=0, max_depth=None, parent_bookmark=None):
     if node is None or (max_depth is not None and current_depth > max_depth):
         return
 
     if node.pdf_file and os.path.exists(node.pdf_file):
-        merger.append(node.pdf_file,node.link)
+        # Get the current page count before appending
+        start_page = len(merger.pages)
+        
+        # Append the PDF
+        merger.append(node.pdf_file, import_outline=False)
         print(f"Appending {node.title} to merger")
-    else:
-        print(f"Warning: PDF file not found or not set for {node.title}")
 
+        # Create a bookmark for this node
+        bookmark = merger.add_outline_item(
+            node.link,
+            page_number=start_page,
+            parent=parent_bookmark
+        )
+
+    else:
+        print(f"Warning: PDF file not found or not set for {node.link}")
+        bookmark = parent_bookmark
+
+    # Recursively process children
     for child in node.children:
-        add_content_recursive(child, merger, current_depth + 1, max_depth)
+        add_content_recursive(child, merger, current_depth + 1, max_depth, bookmark)
