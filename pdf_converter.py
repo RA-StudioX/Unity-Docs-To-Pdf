@@ -8,7 +8,7 @@ from TOC import parse_json_toc, TOCNode
 
 pdfkit_config = pdfkit.configuration(wkhtmltopdf=PATH_TO_WKHTMLTOPDF)
 
-def convert_pdfs_recursive(node, temp_dir, current_depth=0, max_depth=2):
+def convert_pdfs_recursive(node, temp_dir, current_depth=0, max_depth=None):
     if not node.children or (max_depth is not None and current_depth >= max_depth):
         return []
 
@@ -61,7 +61,7 @@ def convert_pdfs(depth_limit=None):
 
     print(f"\nPDF conversion, ToC generation, and merge complete. Output file: {OUTPUT_PDF}")
 
-def add_content_recursive(node, merger, current_depth=0, max_depth=2):
+def add_content_recursive(node, merger, current_depth=0, max_depth=None):
     if not node.children or (max_depth is not None and current_depth >= max_depth):
         return
 
