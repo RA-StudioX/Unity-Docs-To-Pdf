@@ -101,7 +101,7 @@ def add_content_recursive(node, merger, current_depth=0, max_depth=None):
         return
 
     if node.pdf_file and os.path.exists(node.pdf_file):
-        merger.append(node.pdf_file)
+        merger.append(node.pdf_file,node.link)
         print(f"Appending {node.title} to merger")
     else:
         print(f"Warning: PDF file not found or not set for {node.title}")
