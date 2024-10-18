@@ -1,10 +1,10 @@
 import argparse
-from topic_utils import print_topic_info, get_max_topic_index
+from topic_utils import print_topic_info, get_max_topic_index, print_subtopic_info
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Convert Unity Documentation HTML files to PDF with optional file limit.",
-        epilog="Example usage: python main.py --topic-index 0 --depth 2 --output unity_docs.pdf"
+        epilog="Example usage: python main.py --topic-index 0 --subtopic-indices 1 2 --depth 2 --output unity_docs.pdf"
     )
     parser.add_argument(
         "--depth", 
@@ -17,6 +17,12 @@ def parse_arguments():
         help="Index of the topic to convert (0 to max_index). If not provided, all topics will be converted."
     )
     parser.add_argument(
+        "--subtopic-indices",
+        nargs='+',
+        type=int,
+        help="Indices of subtopics to convert. Use space-separated integers to specify the path to the desired subtopic."
+    )
+    parser.add_argument(
         "--output", 
         type=str, 
         default="output.pdf",
@@ -24,14 +30,19 @@ def parse_arguments():
     )
     parser.add_argument(
         "--list-topics", 
-        action="store_true", 
-        help="List all available topics and their indices, then exit."
+        nargs='?',
+        const=-1,
+        type=int,
+        help="List all available topics and their indices, then exit. If an index is provided, list sub-topics for that index."
     )
     return parser.parse_args()
 
 def validate_arguments(args):
-    if args.list_topics:
-        print_topic_info()
+    if args.list_topics is not None:
+        if args.list_topics == -1:
+            print_topic_info()
+        else:
+            print_subtopic_info(args.list_topics)
         return None
 
     max_topic_index = get_max_topic_index()
@@ -48,6 +59,7 @@ def validate_arguments(args):
 
     return {
         'topic_indices': topic_indices,
+        'subtopic_indices': args.subtopic_indices,
         'depth': args.depth,
         'output': args.output
     }

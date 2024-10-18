@@ -7,6 +7,7 @@ def main():
         return
 
     topic_indices = args['topic_indices']
+    subtopic_indices = args['subtopic_indices']
     depth_limit = args['depth']
     output_pdf = args['output']
 
@@ -14,6 +15,8 @@ def main():
         topic_info = get_topic_info()
         selected_topic = topic_info[topic_indices[0]][1]
         print(f"\nConverting topic: {selected_topic}")
+        if subtopic_indices:
+            print(f"Starting from subtopic indices: {subtopic_indices}")
     else:
         print("\nConverting all topics")
 
@@ -28,7 +31,7 @@ def main():
             topic_info = get_topic_info()
             current_topic = topic_info[index][1]
             print(f"\nConverting topic {index}: {current_topic}")
-        convert_pdfs(depth_limit=depth_limit, topic_index=index, output_pdf=output_pdf)
+        convert_pdfs(depth_limit=depth_limit, topic_index=index, subtopic_indices=subtopic_indices, output_pdf=output_pdf)
 
     if len(topic_indices) > 1:
         print(f"\nAll topics have been converted and saved to {output_pdf}")

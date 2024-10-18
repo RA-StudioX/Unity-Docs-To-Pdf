@@ -43,14 +43,35 @@ def convert_pdfs_recursive(node, temp_dir, current_depth=0, max_depth=None):
     for child in node.children:
         convert_pdfs_recursive(child, temp_dir, current_depth + 1, max_depth)
 
-def convert_pdfs(output_pdf, depth_limit=None, topic_index=None):
+def find_subtopic_node(root_node, topic_index, subtopic_indices):
+    if not subtopic_indices:
+        return root_node.children[topic_index] if 0 <= topic_index < len(root_node.children) else None
+    
+    current_node = root_node.children[topic_index]
+    for index in subtopic_indices:
+        if 0 <= index < len(current_node.children):
+            current_node = current_node.children[index]
+        else:
+            return None
+    return current_node
+
+def convert_pdfs(output_pdf, depth_limit=None, topic_index=None, subtopic_indices=None):
     root_node = parse_json_toc(TOC_DIR)
-    root_node_list = root_node.children
+    
     # Create a temporary directory to store individual PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
-        root_node_list = root_node_list[topic_index:topic_index+1] if topic_index is not None else root_node_list
-        for node in root_node_list:
-            convert_pdfs_recursive(node, temp_dir, max_depth=depth_limit)
+        if topic_index is not None:
+            selected_node = find_subtopic_node(root_node, topic_index, subtopic_indices)
+            if selected_node:
+                print(f"\nConverting from subtopic: {selected_node.title}")
+                convert_pdfs_recursive(selected_node, temp_dir, max_depth=depth_limit)
+            else:
+                print(f"Error: Invalid topic or subtopic index.")
+                return
+        else:
+            print("\nConverting all topics")
+            for node in root_node.children:
+                convert_pdfs_recursive(node, temp_dir, max_depth=depth_limit)
 
         print("\nAll individual PDFs created. Merging...")
 
@@ -62,8 +83,13 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_index=None):
             merger.append('cover.pdf')
 
         # Add content pages
-        for node in root_node_list:
-            add_content_recursive(node, merger, max_depth=depth_limit)
+        if topic_index is not None:
+            selected_node = find_subtopic_node(root_node, topic_index, subtopic_indices)
+            if selected_node:
+                add_content_recursive(selected_node, merger, max_depth=depth_limit)
+        else:
+            for node in root_node.children:
+                add_content_recursive(node, merger, max_depth=depth_limit)
 
         merger.write(output_pdf)
         merger.close()
