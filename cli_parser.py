@@ -1,5 +1,5 @@
 import argparse
-from topic_utils import print_topic_info, get_max_topic_index, print_subtopic_info, navigate_topics, print_full_topic_tree
+from topic_utils import print_topic_info, get_max_topic_index, print_subtopic_info, print_full_topic_tree
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -29,11 +29,6 @@ def parse_arguments():
         help="List topics and subtopics. Use slash-separated integers to specify the path to the desired topic/subtopic, or 'all' to list main topics. Example: '0/1/2'"
     )
     parser.add_argument(
-        "--navigate",
-        action="store_true",
-        help="Start an interactive navigation of the topic tree."
-    )
-    parser.add_argument(
         "--full-tree",
         action="store_true",
         help="Print the full topic tree with all subtopics and their indices."
@@ -50,10 +45,6 @@ def validate_arguments(args):
                 print_subtopic_info(topic_indices)
             except ValueError:
                 print(f"Error: Invalid topic path '{args.list_topics}'. Please provide integers separated by '/'.")
-        return None
-    
-    if args.navigate:
-        navigate_topics()
         return None
     
     if args.full_tree:
