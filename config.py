@@ -22,5 +22,3 @@ PDF_OPTIONS = {
 TOC_OPTIONS = {
     'xsl-style-sheet': 'toc.xsl'
 }
-
-OUTPUT_PDF = 'documentation.pdf'
