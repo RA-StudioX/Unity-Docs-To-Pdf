@@ -54,7 +54,7 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_indices=None):
     
     # Create a temporary directory to store individual PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
-        if topic_indices:
+        if topic_indices and len(topic_indices) < len(root_node.children):
             selected_node = find_topic_node(root_node, topic_indices)
             if selected_node:
                 print(f"\nConverting from topic: {selected_node.title}")
@@ -73,7 +73,7 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_indices=None):
         merger = PdfMerger()
 
         # Add content pages
-        if topic_indices:
+        if topic_indices and len(topic_indices) < len(root_node.children):
             selected_node = find_topic_node(root_node, topic_indices)
             if selected_node:
                 add_content_recursive(selected_node, merger, max_depth=depth_limit)
@@ -85,8 +85,6 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_indices=None):
         merger.close()
 
     print(f"\nPDF conversion, ToC generation, and merge complete. Output file: {output_pdf}")
-
-
 
 def add_content_recursive(node, merger, current_depth=0, max_depth=None, parent_bookmark=None):
     if node is None or (max_depth is not None and current_depth > max_depth):

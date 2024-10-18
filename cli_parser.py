@@ -14,7 +14,7 @@ def parse_arguments():
     parser.add_argument(
         "--topic-path", 
         type=str,
-        help="Path to the topic to convert. Use slash-separated integers to specify the path to the desired topic/subtopic. Example: '0/1/2'"
+        help="Path to the topic to convert. Use slash-separated integers to specify the path to the desired topic/subtopic. Example: '0/1/2'. Use 'all' to convert all topics."
     )
     parser.add_argument(
         "--output", 
@@ -53,15 +53,25 @@ def validate_arguments(args):
 
     max_topic_index = get_max_topic_index()
 
+    topic_indices = []
     if args.topic_path:
-        topic_indices = [int(i) for i in args.topic_path.split('/')]
-        if topic_indices[0] < 0 or topic_indices[0] > max_topic_index:
-            print(f"Error: First topic index must be between 0 and {max_topic_index}")
-            print("\nAvailable topics:")
-            print_topic_info()
-            return None
+        if args.topic_path.lower() == 'all':
+            topic_indices = list(range(max_topic_index + 1))
+        else:
+            try:
+                topic_indices = [int(i) for i in args.topic_path.split('/')]
+                if topic_indices[0] < 0 or topic_indices[0] > max_topic_index:
+                    print(f"Error: First topic index must be between 0 and {max_topic_index}")
+                    print("\nAvailable topics:")
+                    print_topic_info()
+                    return None
+            except ValueError:
+                print(f"Error: Invalid topic path '{args.topic_path}'. Please provide integers separated by '/' or use 'all'.")
+                return None
     else:
         topic_indices = list(range(max_topic_index + 1))
+
+    print(f"Debug: Validated topic indices: {topic_indices}")  # Debug print
 
     return {
         'topic_indices': topic_indices,

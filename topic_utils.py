@@ -83,3 +83,12 @@ def get_topic_info():
 
 def get_max_topic_index():
     return len(get_topic_info()) - 1
+
+def find_topic_node(root_node, topic_indices):
+    current_node = root_node
+    for index in topic_indices:
+        if 0 <= index < len(current_node.children):
+            current_node = current_node.children[index]
+        else:
+            return None
+    return current_node
