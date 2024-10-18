@@ -1,4 +1,4 @@
 pdfkit
 beautifulsoup4
-PyMuPDF
 reportlab
+PyPDF2

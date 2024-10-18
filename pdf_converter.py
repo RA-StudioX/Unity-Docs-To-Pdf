@@ -1,56 +1,58 @@
 import pdfkit
 import os
-import subprocess
+from PyPDF2 import PdfMerger
 import tempfile
-from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, OUTPUT_PDF
-from html_preprocessor import preprocess_html
+from config import PATH_TO_WKHTMLTOPDF, HTML_DIR, PDF_OPTIONS, TOC_OPTIONS, OUTPUT_PDF
 
 pdfkit_config = pdfkit.configuration(wkhtmltopdf=PATH_TO_WKHTMLTOPDF)
 
 def convert_pdfs(file_limit=None):
+    # Create a temporary directory to store individual PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
+        # Step 1: Convert each HTML file to a PDF
         html_files = [f for f in os.listdir(HTML_DIR) if f.endswith('.html')]
+        
         if file_limit:
             html_files = html_files[:file_limit]
         
+        pdf_files = []
         total_files = len(html_files)
 
-        # Preprocess HTML files
-        preprocessed_files = []
         for index, html_file in enumerate(html_files, start=1):
-            with open(os.path.join(HTML_DIR, html_file), 'r', encoding='utf-8') as f:
-                content = f.read()
+            pdf_file = os.path.join(temp_dir, html_file.replace('.html', '.pdf'))
+            html_path = os.path.join(HTML_DIR, html_file)
             
-            preprocessed_content = preprocess_html(content)
+            # Change the current working directory to the HTML file's directory
+            original_cwd = os.getcwd()
+            os.chdir(os.path.dirname(html_path))
             
-            preprocessed_file = os.path.join(temp_dir, f'preprocessed_{html_file}')
-            with open(preprocessed_file, 'w', encoding='utf-8') as f:
-                f.write(preprocessed_content)
-            
-            preprocessed_files.append(preprocessed_file)
-            print(f"Preprocessed {index}/{total_files}: {html_file}")
+            try:
+                # Pass the options to pdfkit.from_file
+                pdfkit.from_file(html_file, pdf_file, configuration=pdfkit_config, options=PDF_OPTIONS)
+                pdf_files.append(pdf_file)
 
-        print("\nGenerating PDF...")
-        
-        output_pdf = os.path.join(temp_dir, 'output.pdf')
-        
-        cmd = [PATH_TO_WKHTMLTOPDF, '--enable-local-file-access']
-        
-        if os.path.exists('cover.html'):
-            cmd.extend(['cover', 'cover.html'])
-        
-        cmd.extend(preprocessed_files)
-        cmd.append(output_pdf)
-        
-        try:
-            subprocess.run(cmd, check=True)
-            print("PDF generated successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error generating PDF: {str(e)}")
-            return
+                # Notify after each PDF is created
+                print(f"Converted {index}/{total_files}: {html_file} to PDF")
+            except Exception as e:
+                print(f"Error converting {html_file}: {str(e)}")
+            finally:
+                # Change back to the original working directory
+                os.chdir(original_cwd)
 
-        with open(output_pdf, 'rb') as f_in:
-            with open(OUTPUT_PDF, 'wb') as f_out:
-                f_out.write(f_in.read())
+        print("\nAll individual PDFs created. Generating Table of Contents and merging...")
 
-    print(f"\nPDF conversion complete. Output file: {OUTPUT_PDF}")
+        # Step 2: Generate ToC and merge PDFs
+        merger = PdfMerger()
+
+        # Add cover page if exists
+        if os.path.exists('cover.pdf'):
+            merger.append('cover.pdf')
+
+        # Add content pages
+        for pdf_file in pdf_files:
+            merger.append(pdf_file)
+
+        merger.write(OUTPUT_PDF)
+        merger.close()
+
+    print(f"\nPDF conversion, ToC generation, and merge complete. Output file: {OUTPUT_PDF}")
