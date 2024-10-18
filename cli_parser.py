@@ -24,8 +24,9 @@ def parse_arguments():
     )
     parser.add_argument(
         "--list-topics", 
-        action="store_true",
-        help="List all available topics and their indices, then exit."
+        nargs='?',
+        const='all',
+        help="List topics and subtopics. Use slash-separated integers to specify the path to the desired topic/subtopic, or 'all' to list main topics. Example: '0/1/2'"
     )
     parser.add_argument(
         "--navigate",
@@ -40,8 +41,15 @@ def parse_arguments():
     return parser.parse_args()
 
 def validate_arguments(args):
-    if args.list_topics:
-        print_topic_info()
+    if args.list_topics is not None:
+        if args.list_topics == 'all':
+            print_topic_info()
+        else:
+            try:
+                topic_indices = [int(i) for i in args.list_topics.split('/')]
+                print_subtopic_info(topic_indices)
+            except ValueError:
+                print(f"Error: Invalid topic path '{args.list_topics}'. Please provide integers separated by '/'.")
         return None
     
     if args.navigate:
