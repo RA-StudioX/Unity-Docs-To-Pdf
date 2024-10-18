@@ -9,13 +9,6 @@ from PyPDF2.generic import Destination, Fit
 
 pdfkit_config = pdfkit.configuration(wkhtmltopdf=PATH_TO_WKHTMLTOPDF)
 
-def get_topic_info():
-    root_node = parse_json_toc(TOC_DIR)
-    return [(i, child.title) for i, child in enumerate(root_node.children)]
-
-def get_max_topic_index():
-    return len(get_topic_info()) - 1
-
 def convert_pdfs_recursive(node, temp_dir, current_depth=0, max_depth=None):
     if node is None or (max_depth is not None and current_depth > max_depth):
         return
@@ -78,10 +71,6 @@ def convert_pdfs(output_pdf, depth_limit=None, topic_indices=None):
 
         # Step 2: Generate ToC and merge PDFs
         merger = PdfMerger()
-
-        # Add cover page if exists
-        if os.path.exists('cover.pdf'):
-            merger.append('cover.pdf')
 
         # Add content pages
         if topic_indices:

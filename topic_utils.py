@@ -76,3 +76,10 @@ def print_full_topic_tree():
     for index, child in enumerate(root_node.children):
         print(f"{index}: {child.title}")
         print_subtopics_recursive(child, "  ", [index])
+
+def get_topic_info():
+    root_node = parse_json_toc(TOC_DIR)
+    return [(i, child.title) for i, child in enumerate(root_node.children)]
+
+def get_max_topic_index():
+    return len(get_topic_info()) - 1

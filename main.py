@@ -1,6 +1,6 @@
-from pdf_converter import convert_pdfs, get_topic_info
+from pdf_converter import convert_pdfs
 from cli_parser import get_cli_args
-from topic_utils import print_subtopic_info
+from topic_utils import print_subtopic_info, get_topic_info
 
 def main():
     args = get_cli_args()
